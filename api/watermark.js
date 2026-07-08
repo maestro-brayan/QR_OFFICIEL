@@ -10,7 +10,7 @@ const DIAGONAL = {
     text          : 'COPIE E-TRIBCOM',
     fontSize      : 65,
     letterSpacing : 20,
-    color         : '#312f2f',
+    color         : '#203358',
     opacity       : 0.18,
 };
 
