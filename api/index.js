@@ -28,6 +28,14 @@ function parsePeriode(periode) {
     return { mm: String(mois).padStart(2, '0'), yyyy: String(annee) };
 }
 
+/* ── Validation des champs "code" et "numero" (référence manuelle) ── */
+function sanitizeRef(value) {
+    if (!value || typeof value !== 'string') return null;
+    const cleaned = value.trim().replace(/[^a-zA-Z0-9]/g, '');
+    if (!cleaned) return null;
+    return cleaned;
+}
+
 /* ── Upload + filigrane + QR Code ── */
 app.post('/api/upload', upload.single('pdf'), async (req, res) => {
     try {
@@ -39,13 +47,17 @@ app.post('/api/upload', upload.single('pdf'), async (req, res) => {
         }
         const { mm, yyyy } = periode;
 
+        const code   = sanitizeRef(req.body.code);
+        const numero = sanitizeRef(req.body.numero);
+        if (!code || !numero) {
+            return res.status(400).json({ error: 'Code et numéro de référence requis (lettres/chiffres uniquement).' });
+        }
+
         // Appliquer le filigrane (paramètres fixés dans watermark.js)
         const pdfBuffer = await applyWatermark(req.file.buffer);
 
-        // Nom unique
-        const baseName = req.file.originalname.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/gi, '_');
-        const suffix   = Date.now().toString(36).slice(-4);
-        const fileName = `CI-ABJ-${mm}-${yyyy}-${baseName}-${suffix}.pdf`;
+        // Nom du fichier basé sur la référence saisie manuellement
+        const fileName = `CI-ABJ-${mm}-${yyyy}-${code}-${numero}.pdf`;
 
         // Upload Vercel Blob
         const blob = await put(fileName, pdfBuffer, {
